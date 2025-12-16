@@ -35,8 +35,8 @@ async function kvPutProxyIP(kv, ip) {
 // ----------- 无脑写入测试 -----------
 async function forceWrite(request, env, ctx) {
   const kv = env.tran;                       // 绑定名
-  //ctx.waitUntil(refreshProxyIP(env.tran));   // 非阻塞
-  //if (cachedProxyIP) proxyIP = cachedProxyIP;
+  ctx.waitUntil(refreshProxyIP(env.tran));   // 非阻塞
+  if (cachedProxyIP) proxyIP = cachedProxyIP;
   //await kv.put('proxy_ip_cache', '{"ip":"104.21.123.45","ts":1712345678900}', { expirationTtl: 3600 });
   
   return new Response(`ok: ${proxyIP}`, { status: 200 });
@@ -131,7 +131,7 @@ const worker_default = {
 const url = new URL(request.url);
 switch (url.pathname) {
   case '/write':                       // ← 新增
-    return forceWrite(request, env);
+    return forceWrite(request, env, ctx);
   // 其他 case …
 }
 
