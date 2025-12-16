@@ -39,7 +39,7 @@ async function forceWrite(request, env, ctx) {
   //if (cachedProxyIP) proxyIP = cachedProxyIP;
   //await kv.put('proxy_ip_cache', '{"ip":"104.21.123.45","ts":1712345678900}', { expirationTtl: 3600 });
   
-  return new Response('ok', { status: 200 });
+  return new Response('ok: ${proxyIP}', { status: 200 });
 }
 
 
