@@ -1,7 +1,7 @@
 // src/worker.js
 import { connect } from "cloudflare:sockets";''
 let sha224Password ='4b23f8479e2c6d03799d2cfc7a7d1ea872dfb1ec1fa1859b77e4594d';
-let proxyIP = "104.131.168.146";
+let proxyIP = "";
 let a = "";
 
 
@@ -9,7 +9,7 @@ let a = "";
 // 注意：env.PROXY_IP_KV 就是 wrangler.toml 里绑定的 KV 对象
 const KV_KEY = 'proxy_ip_cache';
 
-const KV_TTL_SEC = 3600;            // 1 h
+const KV_TTL_SEC = 360;            // 1 h
 
 /** 从 KV 读缓存，没有或过期返回 null */
 async function kvGetProxyIP(kv) {
@@ -35,8 +35,11 @@ async function kvPutProxyIP(kv, ip) {
 // ----------- 无脑写入测试 -----------
 async function forceWrite(request, env) {
   const kv = env.tran;                       // 绑定名
-  await kv.put('proxy_ip_cache', '{"ip":"104.21.123.45","ts":1712345678900}', { expirationTtl: 3600 });
-  return new Response('ok', { status: 200 });
+  ctx.waitUntil(refreshProxyIP(env.tran));   // 非阻塞
+  if (cachedProxyIP) proxyIP = cachedProxyIP;
+  //await kv.put('proxy_ip_cache', '{"ip":"104.21.123.45","ts":1712345678900}', { expirationTtl: 3600 });
+  
+  return new Response('ok,your ip is :$proxyIP', { status: 200 });
 }
 
 
@@ -45,7 +48,7 @@ async function forceWrite(request, env) {
 // -------------------- 新增：动态解析 proxyip.cmliussss.net --------------------
 const PROXY_HOST = 'proxyip.cmliussss.net';
 const PROBE_PORT = 443;          // 测 443 端口
-const PROBE_TIMEOUT = 3000;      // 3 s 超时
+const PROBE_TIMEOUT = 1300;      // 3 s 超时
 const CACHE_TTL = 3600_000;      // 1 h
 let cachedProxyIP = null;        // 上一次成功 IP
 let lastUpdateTs = 0;            // 时间戳
@@ -121,7 +124,7 @@ const worker_default = {
      */
     async fetch(request, env, ctx) {
         try {
-           // proxyIP = env.PROXYIP || proxyIP;
+            //proxyIP = env.MUI;
             sha224Password = env.SHA224PASS || sha224Password
 
 
@@ -138,7 +141,7 @@ switch (url.pathname) {
     /* ---------- 新增：后台刷新 proxyIP ---------- */
  
        ctx.waitUntil(refreshProxyIP(env.tran));   // 非阻塞
-    //if (cachedProxyIP) proxyIP = cachedProxyIP; // 如有缓存优先用
+    if (cachedProxyIP) proxyIP = cachedProxyIP; // 如有缓存优先用
     /* ---------- 新增结束 ------------------------ */
 
 
