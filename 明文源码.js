@@ -11,12 +11,17 @@ export default {
             let result = "";
             
             try {
-                const resp = await fetch(proxy, {
-                    method: "POST",
+                // 关键：HTTP 代理必须用完整 URL
+                const resp = await fetch(target, {
+                    method: "GET",
                     headers: {
-                        "Content-Type": "application/x-www-form-urlencoded"
+                        "Host": "ipinfo.io"
                     },
-                    body: `url=${encodeURIComponent(target)}`
+                    // Worker 的代理方式
+                    cf: {
+                        // 通过代理转发
+                        fetch: proxy
+                    }
                 });
                 
                 result = await resp.text();
@@ -29,7 +34,6 @@ export default {
             });
         }
         
-        // GET 请求 → 显示空表单
         return new Response(renderPage("", "", ""), {
             headers: { "Content-Type": "text/html; charset=utf-8" }
         });
